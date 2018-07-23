@@ -15,6 +15,7 @@ using Avalonia.Controls.Utils;
 using Avalonia.Input;
 using Avalonia.LogicalTree;
 using Avalonia.Metadata;
+using Avalonia.VisualTree;
 
 namespace Avalonia.Controls
 {
@@ -323,35 +324,37 @@ namespace Avalonia.Controls
             LogicalChildren.RemoveAll(toRemove);
         }
 
+        /// <summary>
+        /// Handles directional navigation within the <see cref="ItemsControl"/>.
+        /// </summary>
+        /// <param name="e">The key events.</param>
         protected override void OnKeyDown(KeyEventArgs e)
         {
-            if (Presenter?.Panel is INavigableContainer container)
+            var focus = FocusManager.Instance;
+            var direction = e.Key.ToNavigationDirection();
+            var container = Presenter?.Panel as INavigableContainer;
+
+            if (container == null ||
+                focus.Current == null ||
+                direction == null ||
+                direction.Value.IsTab())
             {
-                var focus = FocusManager.Instance;
-                var current = focus.Current;
-                NavigationDirection? direction = null;
+                return;
+            }
 
-                switch (e.Key)
+            var current = focus.Current
+                .GetSelfAndVisualAncestors()
+                .OfType<IInputElement>()
+                .FirstOrDefault(x => x.VisualParent == container);
+
+            if (current != null)
+            {
+                var next = container.GetControl(direction.Value, current);
+
+                if (next != null)
                 {
-                    case Key.Up: direction = NavigationDirection.Up; break;
-                    case Key.Down: direction = NavigationDirection.Down; break;
-                    case Key.Left: direction = NavigationDirection.Left; break;
-                    case Key.Right: direction = NavigationDirection.Right; break;
-                    case Key.Home: direction = NavigationDirection.First; break;
-                    case Key.End: direction = NavigationDirection.Last; break;
-                    case Key.PageUp: direction = NavigationDirection.PageUp; break;
-                    case Key.PageDown: direction = NavigationDirection.PageDown; break;
-                }
-
-                if (direction != null && current != null)
-                {
-                    var next = container.GetControl(direction.Value, current);
-
-                    if (next != null)
-                    {
-                        focus.Focus(next, NavigationMethod.Directional);
-                        e.Handled = true;
-                    }
+                    focus.Focus(next, NavigationMethod.Directional);
+                    e.Handled = true;
                 }
             }
 

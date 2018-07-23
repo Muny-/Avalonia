@@ -136,6 +136,13 @@ namespace Avalonia.Controls
             }
         }
 
+        protected override void OnKeyDown(KeyEventArgs e)
+        {
+            var direction = e.Key.ToNavigationDirection();
+
+            if (direction)
+        }
+
         /// <inheritdoc/>
         protected override void OnPointerPressed(PointerPressedEventArgs e)
         {
